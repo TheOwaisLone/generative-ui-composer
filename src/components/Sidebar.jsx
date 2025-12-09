@@ -45,7 +45,7 @@ export default function Sidebar() {
       </button>
 
       <div className="mt-4 text-sm text-slate-600">
-        Tip: Drag blocks around. Double-click a text block to edit.
+        Tip: Click a block to select it. Use the Inspector on the right to edit.
       </div>
     </aside>
   );

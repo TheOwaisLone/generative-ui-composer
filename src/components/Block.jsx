@@ -3,25 +3,27 @@ import { useStore } from "../store/useStore";
 
 /**
  * Draggable Block using pointer events.
- * - block: { id, type, x, y, width, height, text }
- * - canvasRef: ref to parent canvas for bounds
+ * Supports selecting by click (single click).
  */
 export default function Block({ block, canvasRef }) {
   const updateBlock = useStore((s) => s.updateBlock);
   const removeBlock = useStore((s) => s.removeBlock);
+  const selectBlock = useStore((s) => s.selectBlock);
+  const selectedId = useStore((s) => s.selectedId);
+
+  const isSelected = selectedId === block.id;
   const elRef = useRef(null);
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     const el = elRef.current;
     if (!el) return;
-    // Keep element style synced from block props
     el.style.transform = `translate(${block.x}px, ${block.y}px)`;
     el.style.width = `${block.width}px`;
     el.style.height = `${block.height}px`;
   }, [block.x, block.y, block.width, block.height]);
 
-  // Drag logic using pointer events
+  // Pointer drag logic
   useEffect(() => {
     const el = elRef.current;
     if (!el) return;
@@ -36,7 +38,10 @@ export default function Block({ block, canvasRef }) {
       // only primary button
       if (e.button && e.button !== 0) return;
       e.stopPropagation();
-      el.setPointerCapture(e.pointerId);
+      // select on pointer down
+      selectBlock(block.id);
+
+      el.setPointerCapture?.(e.pointerId);
       dragging = true;
 
       startX = e.clientX;
@@ -44,7 +49,6 @@ export default function Block({ block, canvasRef }) {
       originX = block.x;
       originY = block.y;
 
-      // bump element visually
       el.style.zIndex = 40;
       el.classList.add("shadow-2xl");
     }
@@ -57,23 +61,21 @@ export default function Block({ block, canvasRef }) {
       let newX = originX + dx;
       let newY = originY + dy;
 
-      // optional: keep within canvas bounds
       const canvas = canvasRef?.current;
       if (canvas) {
         const canvasRect = canvas.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
-        // clamp
+
         const minX = 0;
         const minY = 0;
-        const maxX = canvasRect.width - elRect.width;
-        const maxY = canvasRect.height - elRect.height;
+        const maxX = Math.max(0, canvasRect.width - elRect.width);
+        const maxY = Math.max(0, canvasRect.height - elRect.height);
         if (newX < minX) newX = minX;
         if (newY < minY) newY = minY;
         if (newX > maxX) newX = maxX;
         if (newY > maxY) newY = maxY;
       }
 
-      // immediate visual
       el.style.transform = `translate(${newX}px, ${newY}px)`;
     }
 
@@ -81,12 +83,11 @@ export default function Block({ block, canvasRef }) {
       if (!dragging) return;
       dragging = false;
       try {
-        el.releasePointerCapture(e.pointerId);
+        el.releasePointerCapture?.(e.pointerId);
       } catch {}
       el.style.zIndex = 10;
       el.classList.remove("shadow-2xl");
 
-      // compute final position
       const style = el.style.transform; // translate(xpx, ypx)
       const match = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(style);
       if (match) {
@@ -105,11 +106,12 @@ export default function Block({ block, canvasRef }) {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
     };
-  }, [block, canvasRef, updateBlock]);
+  }, [block, canvasRef, updateBlock, selectBlock]);
 
-  function doubleClickToEdit() {
+  function onDoubleClick() {
     if (block.type === "text" || block.type === "card") {
       setEditing(true);
+      selectBlock(block.id);
     }
   }
 
@@ -131,13 +133,21 @@ export default function Block({ block, canvasRef }) {
         width: `${block.width}px`,
         height: `${block.height}px`,
       }}
-      className="block-el select-none pointer-events-auto z-10"
-      onDoubleClick={doubleClickToEdit}
+      className={`block-el select-none pointer-events-auto z-10 ${
+        isSelected ? "ring-2 ring-sky-400" : ""
+      }`}
+      onDoubleClick={onDoubleClick}
+      onClick={(e) => {
+        // stop canvas from handling click
+        e.stopPropagation();
+        selectBlock(block.id);
+      }}
     >
       <div
-        className={`w-full h-full rounded-lg border p-3 flex flex-col justify-between bg-white`}
+        className={`w-full h-full rounded-lg border p-3 flex flex-col justify-between bg-white ${
+          isSelected ? "border-sky-400" : "border-slate-200"
+        }`}
       >
-        {/* Header area */}
         <div className="flex items-start justify-between gap-2">
           <div className="text-sm font-medium break-words">{block.text}</div>
 
@@ -152,7 +162,6 @@ export default function Block({ block, canvasRef }) {
           </div>
         </div>
 
-        {/* Edit form (modal-like inside block) */}
         {editing && (
           <form onSubmit={saveEdit} className="mt-2">
             <input
@@ -162,7 +171,10 @@ export default function Block({ block, canvasRef }) {
               autoFocus
             />
             <div className="mt-2 flex gap-2">
-              <button type="submit" className="text-xs px-2 py-1 rounded bg-sky-600 text-white">
+              <button
+                type="submit"
+                className="text-xs px-2 py-1 rounded bg-sky-600 text-white"
+              >
                 Save
               </button>
               <button
@@ -176,9 +188,10 @@ export default function Block({ block, canvasRef }) {
           </form>
         )}
 
-        {/* Card extra placeholder */}
         {block.type === "card" && !editing && (
-          <div className="mt-3 text-xs text-slate-500">Card content preview</div>
+          <div className="mt-3 text-xs text-slate-500">
+            Card content preview
+          </div>
         )}
       </div>
     </div>
