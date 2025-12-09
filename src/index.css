@@ -2,16 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Root variables — default (light) */
+:root {
+  --bg: #f8fafc; /* slate-50 */
+  --panel: #ffffff;
+  --muted: #94a3b8; /* slate-400 */
+  --accent: #0ea5e9; /* sky-500 */
+  --text: #0f172a; /* slate-900 */
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+  --bg: #0f172a; /* slate-900 */
+  --panel: #0b1220; /* very dark */
+  --muted: #94a3b8;
+  --accent: #60a5fa; /* lighter sky */
+  --text: #e6eef8;
+}
+
+/* Sunset theme */
+[data-theme="sunset"] {
+  --bg: #fff7ed;
+  --panel: #fffaf0;
+  --muted: #8b5e3c;
+  --accent: #fb923c; /* orange */
+  --text: #3b2f2f;
+}
+
+/* Apply to body */
 html,
 body,
 #root {
   height: 100%;
 }
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial;
 }
 
+/* helper accent class (used inline where needed) */
+.app-accent {
+  background-color: var(--accent);
+  color: white;
+  border-color: transparent;
+}
+
+/* panels should use panel bg */
+.app-panel {
+  background: var(--panel);
+}
+
+/* make sure block elements still look good */
 .block-el {
   touch-action: none;
   user-select: none;
+  transition: box-shadow 0.12s ease;
+}
+.block-el:active {
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
 }
