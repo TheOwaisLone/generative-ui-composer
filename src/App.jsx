@@ -2,9 +2,10 @@ import React from "react";
 import Sidebar from "./components/Sidebar";
 import Canvas from "./components/Canvas";
 import Inspector from "./components/Inspector";
+import ExportPanel from "./components/ExportPanel";
 
 /**
- * Milestone 3 App: sidebar + canvas + inspector
+ * Milestone 4 App: canvas + inspector + export panel
  */
 export default function App() {
   return (
@@ -16,7 +17,7 @@ export default function App() {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <h1 className="text-xl font-bold">Generative UI Composer</h1>
             <div className="text-sm text-slate-500">
-              Milestone 3 — Inspector panel
+              Milestone 4 — Export to React component
             </div>
           </div>
         </header>
@@ -26,7 +27,10 @@ export default function App() {
             <Canvas />
           </div>
 
-          <Inspector />
+          <div className="flex flex-col gap-6">
+            <Inspector />
+            <ExportPanel />
+          </div>
         </main>
       </div>
     </div>
